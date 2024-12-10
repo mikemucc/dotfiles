@@ -1,0 +1,106 @@
+#!/bin/bash
+
+export AWS_REGION=us-east-2
+
+# ls variations
+alias la='ls -lah'
+alias le='ls -leh'
+alias lss='ls -lSh'
+alias lt='ls -lth'
+
+service(){
+    # Easily restart services managed by homebrew
+    brew services "$@"
+}
+
+open-git-repo(){
+    git remote get-url origin --push >/dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        echo "This is not a git directory"
+    else
+        REPO_URL=$(git remote get-url --push origin | sed 's/.git$//')
+        REPO_NAME=$(echo $REPO_URL | sed 's#.*/##')
+        DIRECTORY=$(pwd | python3 -c "import re; import sys; r = re.match(r'.*?/$REPO_NAME(.*$)', sys.stdin.read()); print(r.group(1));")
+        BRANCH=$(git branch --show-current)
+        open ${REPO_URL}/tree/${BRANCH}${DIRECTORY}
+    fi
+}
+
+git-pr(){
+    echo "Usage: git-pr [pull-request-number]"
+    git fetch origin pull/$1/head:pr-$1 && git checkout pr-$1
+}
+
+alias gitroot='cd $(git rev-parse --show-toplevel)'
+
+alias git-sha="git rev-parse HEAD"
+
+alias list-profiles='grep --color=no "\[" ~/.aws/credentials | sed -e '\''s/\[//'\'' -e '\''s/\]//'\'' | sort'
+
+dndoff(){
+    defaults -currentHost write ~/Library/Preferences/ByHost/com.apple.notificationcenterui doNotDisturb -boolean false
+    killall NotificationCenter
+}
+
+dndon(){
+    defaults -currentHost write ~/Library/Preferences/ByHost/com.apple.notificationcenterui doNotDisturb -boolean true
+    defaults -currentHost write ~/Library/Preferences/ByHost/com.apple.notificationcenterui doNotDisturbDate -date "`date -u +\"%Y-%m-%d %H:%M:%S +0000\"`"
+    killall NotificationCenter
+}
+
+
+alias refresh='source ~/.bash_profile'
+
+#useful terraform aliases
+alias tfclean="rm -rf .terraform*"
+alias tfi="terraform init"
+alias tfp="terraform plan"
+alias tffmt="terraform fmt --recursive"
+alias tfci="rm -rf .terraform* && terraform init"
+alias tfcip="rm -rf .terraform* && terraform init && terraform plan"
+alias tfcimp="rm -rf .terraform* && terraform init && make plan"
+alias next="echo && echo '--------------' && echo "
+alias vpnup="tailscale up  --accept-routes=true --accept-dns=true"
+alias vpndown="tailscale down"
+alias vpnrefresh="tailscale down && tailscale up  --accept-routes=true --accept-dns=true"
+
+ecr-login(){
+    echo "Logging into ECR for current AWS_PROFILE: $AWS_PROFILE"
+    aws_acct_number=$(aws sts get-caller-identity | jq -r .Account)
+    aws --region us-east-2 ecr get-login-password | docker login --username AWS --password-stdin $aws_acct_number.dkr.ecr.us-east-2.amazonaws.com
+}
+
+fg_attach(){(
+    if [ $# -lt 3 ]; then
+        echo "Usage: fg_attach [cluster-name] [task-id] [container-name]"
+        exit 1
+    fi
+    aws ecs execute-command  \
+    --region $AWS_REGION \
+    --cluster $1 \
+    --task $2 \
+    --container $3 \
+    --command "/bin/bash" \
+    --interactive
+)}
+
+kcdebug(){ 
+    namespace="${1:-default}"
+    kubectl run -i --tty debug --image=public.ecr.aws/lts/ubuntu:24.04_stable --restart=Never -n $namespace -- /bin/bash; kubectl delete pod debug 
+}
+kcawscli(){ 
+    namespace="${1:-default}"
+    kubectl run -i --tty awscli --image=public.ecr.aws/aws-cli/aws-cli:2.18.6 --restart=Never -n $namespace --command -- sh; kubectl delete pod awscli 
+}
+
+flushdns(){
+    sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+}
+
+### These require `aws-sso-creds` from https://github.com/JorgeReus/aws-sso-creds
+alias awscreds="aws-sso-creds -f dorsia"
+alias aps='eval "export AWS_PROFILE=$(aws-sso-creds select)"'
+alias awsrefresh='aws-sso-creds -p dorsia'
+alias kc="kubectl"
+source <(kubectl completion bash)
+complete -F __start_kubectl kc

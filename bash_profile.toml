@@ -1,0 +1,41 @@
+eval "$(/opt/homebrew/bin/brew shellenv)"
+export BASH_SILENCE_DEPRECATION_WARNING=1
+[[ -r "/opt/homebrew/etc/profile.d/bash_completion.sh" ]] && . "/opt/homebrew/etc/profile.d/bash_completion.sh"
+
+#Import my Aliases
+source ${HOME}/.aliases
+
+export OPENAI_API_KEY=
+export HISTCONTROL=ignoreboth:erasedups
+
+export CLICOLOR=1
+export LSCOLORS=GxFxCxDxBxegedabagaced
+
+export TERM="xterm-color"
+
+export STARSHIP_CONFIG=~/dotfiles/starship.toml
+eval "$(starship init bash)"
+
+test -e "${HOME}/.iterm2_shell_integration.bash" && source "${HOME}/.iterm2_shell_integration.bash"
+
+eval $(thefuck --alias)
+eval $(thefuck --alias f)
+export PATH=$PATH:/Users/michael.mucciarone/bin
+## Github
+# export GITHUB_TOKEN=$(security find-internet-password -s 'github.com' -w)
+
+### MANAGED BY RANCHER DESKTOP START (DO NOT EDIT)
+export PATH="/Users/michael.mucciarone/.rd/bin:$PATH"
+### MANAGED BY RANCHER DESKTOP END (DO NOT EDIT)
+export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
+
+export AWS_REGION=us-east-2
+
+. /opt/homebrew/opt/asdf/libexec/asdf.sh
+export PATH="/opt/homebrew/opt/mysql-client/bin:$PATH"
+export PATH="/opt/homebrew/opt/mysql-client@8.4/bin:$PATH"
+export PATH=$PATH:~/.kube/plugins/jordanwilson230
+. "$HOME/.cargo/env"
+
+
+export KUBE_EDITOR=nano
